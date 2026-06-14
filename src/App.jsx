@@ -97,6 +97,7 @@ const INITIAL_MATCHES = [
 export default function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('predictions'); // predictions, results, leaderboard
+  const [groupId, setGroupId] = useState('friends');
   const [players, setPlayers] = useState([]);
   const [currentPlayerId, setCurrentPlayerId] = useState(() => localStorage.getItem('wc_player_id') || '');
   const [matches, setMatches] = useState([]);
@@ -222,10 +223,11 @@ export default function App() {
       const playerId = crypto.randomUUID();
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'players', playerId);
       await setDoc(docRef, {
-        id: playerId,
-        name: newPlayerName.trim(),
-        createdAt: new Date().toISOString()
-      });
+      id: playerId,
+     name: newPlayerName.trim(),
+      groupId: groupId,   // ✅ ADD THIS LINE
+     createdAt: new Date().toISOString()
+});
       setCurrentPlayerId(playerId);
       setNewPlayerName('');
       showFeedback('success', `Created profile for ${newPlayerName.trim()}!`);
@@ -372,7 +374,8 @@ export default function App() {
 
   // Helper to compile leaderboard scores in local memory
   const getLeaderboard = () => {
-    return players.map(p => {
+    const groupPlayers = players.filter(p => p.groupId === groupId);
+     return groupPlayers.map(p => {
       let score = 0;
       let exactCount = 0;
       let outcomeCount = 0;
@@ -434,20 +437,35 @@ export default function App() {
 
           {/* Quick Player Profile Selector */}
           <div className="flex items-center gap-3 bg-slate-800/80 p-2 rounded-xl border border-teal-800/30 w-full md:w-auto">
-            <Users className="w-5 h-5 text-teal-400 flex-shrink-0" />
-            <select
-              className="bg-transparent text-slate-100 text-sm font-semibold focus:outline-none w-full"
-              value={currentPlayerId}
-              onChange={(e) => setCurrentPlayerId(e.target.value)}
-            >
-              <option value="" className="text-slate-900">Select Player Profile...</option>
-              {players.map(p => (
-                <option key={p.id} value={p.id} className="text-slate-900">
-                  ⚽ {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
+
+          <Users className="w-5 h-5 text-teal-400 flex-shrink-0" />
+
+         {/* Player selector */}
+          <select
+          className="bg-transparent text-slate-100 text-sm font-semibold focus:outline-none"
+          value={currentPlayerId}
+         onChange={(e) => setCurrentPlayerId(e.target.value)}
+          >
+         <option value="" className="text-slate-900">Select Player Profile...</option>
+         {players
+         .filter(p => p.groupId === groupId)
+          .map(p => (
+         <option key={p.id} value={p.id} className="text-slate-900">
+        ⚽ {p.name}
+         </option>
+))}
+        </select>
+
+      {/* Group selector */}
+      <select
+       value={groupId}
+       onChange={(e) => setGroupId(e.target.value)}
+       className="bg-transparent text-slate-100 text-sm font-semibold focus:outline-none"
+       >
+       <option value="friends">👬 Friends</option>
+        <option value="family">👨‍👩‍👧 Family</option>
+        </select>
+        </div>
         </div>
       </header>
 
